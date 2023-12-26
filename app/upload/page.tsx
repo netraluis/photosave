@@ -37,13 +37,12 @@ export default function Page() {
     // if (response.ok) {
     const { url, fields } = await response.json();
 
-    console.log("llego");
+    console.log("llego", { url, fields });
     const formData = new FormData();
     Object.entries(fields).forEach(([key, value]) => {
       formData.append(key, value as string);
     });
     formData.append("file", file);
-    console.log("llego 2 ");
     const uploadResponse = await fetch(url, {
       method: "POST",
       body: formData,
@@ -85,6 +84,28 @@ export default function Page() {
     }
   };
 
+  const seePhotos = async() => {
+    try {
+      const response = await fetch(
+        process.env.NEXT_PUBLIC_BASE_URL + "/api/upload",
+        // process.env.NEXT_PUBLIC_BASE_URL + '/api/upload/hello',
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // body: JSON.stringify({ filename: file.name, contentType: file.type, file: file }),
+        }
+      );
+      const res = await response.json();
+      console.log({res})
+      // console.log({ response: await response.json() });
+      // setUrl(res.url);
+    } catch (e: any) {
+      console.log({ e });
+    }
+  }
+
   return (
     <main>
       <h1>Upload a File to S3</h1>
@@ -107,7 +128,8 @@ export default function Page() {
 
       <>
         <p>URL:{url}</p>
-        <button onClick={seePhoto} />
+        <button onClick={seePhoto} >THE PHOTO</button>
+        <button onClick={seePhotos} >SEE PHOTOS</button>
       </>
     </main>
   );
