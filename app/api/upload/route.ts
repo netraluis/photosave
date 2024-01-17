@@ -8,6 +8,8 @@ import {
 import * as AWS from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { connectToDatabase } from "@/app/lib/db";
+import { stat } from "fs";
 
 export async function POST(request: Request) {
   const { filename, contentType, file } = await request.json();
@@ -30,7 +32,37 @@ export async function POST(request: Request) {
       Expires: 600, // Seconds before the presigned post expires. 3600 by default.
     });
 
-    return Response.json({ url, fields });
+    const formData = new FormData();
+    Object.entries(fields).forEach(([key, value]) => {
+      formData.append(key, value as string);
+    });
+    formData.append("file", file);
+
+    const uploadResponse = await fetch(url, {
+      method: "POST",
+      body: formData,
+    });
+
+    console.log({ uploadResponse }, uploadResponse.ok);
+
+    if (uploadResponse.ok) {
+      const client = await connectToDatabase();
+      const db = client.db();
+
+      // delete imageManipulating[index].status;
+
+      await db.collection("photos").insertOne({ filename, contentType, file });
+      client.close();
+
+      console.log("Upload successful!");
+      return Response.json({ url, fields, status: "success" });
+    } else {
+      console.error("S3 Upload Error:", uploadResponse);
+      console.log("Upload failed.");
+      throw new Error("Upload failed.");
+    }
+
+    
   } catch (error: any) {
     return Response.json({ error: error.message });
   }
