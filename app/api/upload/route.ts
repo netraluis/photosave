@@ -9,49 +9,58 @@ import * as AWS from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { connectToDatabase } from "@/app/lib/db";
-import { stat } from "fs";
+import { ObjectId } from "mongodb";
 
 export async function POST(request: Request) {
-  const { filename, contentType, file } = await request.json();
+  const fileToUpload = await request.formData();
+  console.log(fileToUpload);
+  if(!fileToUpload.has('file')) return Response.json({error: ' file'})
+  // const {file } = fileToUpload;
+
+  const file = fileToUpload.get('file');
+  console.log(file)
+  const {name, type} = file as File;
+
 
   try {
     const client = new S3Client({ region: process.env.AWS_REGION });
     const uui = uuidv4();
-    console.log({ uui });
+    // console.log({ key: `${uui}.${contentType.split('/')[1]}` });
     const { url, fields } = await createPresignedPost(client, {
       Bucket: process.env.AWS_BUCKET_NAME!,
-      Key: `${uui}.jpg`,
+      Key: `${uui}.${type.split('/')[1]}`,
       Conditions: [
         ["content-length-range", 0, 10400000085760], // up to 10 MB
-        ["starts-with", "$Content-Type", contentType],
+        ["starts-with", "$Content-Type", type],
       ],
       Fields: {
         // acl: "public-read",
-        "Content-Type": contentType,
+        "Content-Type": type,
       },
       Expires: 600, // Seconds before the presigned post expires. 3600 by default.
     });
 
+    // esto tiene que ir en el otro lado TODOOOO
     const formData = new FormData();
     Object.entries(fields).forEach(([key, value]) => {
       formData.append(key, value as string);
     });
-    formData.append("file", file);
+    formData.append("file", file as File);
 
     const uploadResponse = await fetch(url, {
       method: "POST",
       body: formData,
     });
 
-    console.log({ uploadResponse }, uploadResponse.ok);
-
     if (uploadResponse.ok) {
       const client = await connectToDatabase();
       const db = client.db();
+      // console.log({filename, contentType, file})
 
-      // delete imageManipulating[index].status;
 
-      await db.collection("photos").insertOne({ filename, contentType, file });
+      // await db.collection("photos").insertOne({ filename, contentType, file });
+      // const result = await db.collection("photos").find().toArray();
+      // console.log({ result });
       client.close();
 
       console.log("Upload successful!");

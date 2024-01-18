@@ -10,23 +10,21 @@ export default function Page() {
   const [url, setUrl] = useState("");
   const { data, status }: any = useSession();
 
-  const uploadImage = async (file: any, index: number) => {
+  const uploadImage = async (fileToUpload: any, index: number) => {
+    console.log({fileToUpload})
     const imageManipulating = [...imageShow];
     imageManipulating[index].status = "uploading";
     setImageShow(imageManipulating);
+
+    const formData = new FormData();
+    formData.append("file", fileToUpload);
 
     const response = await fetch(
       process.env.NEXT_PUBLIC_BASE_URL + "/api/upload",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type,
-          file: file,
-        }),
+
+        body: formData,
       }
     );
 
