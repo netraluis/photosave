@@ -11,7 +11,7 @@ export default function Page() {
   const { data, status }: any = useSession();
 
   const uploadImage = async (fileToUpload: any, index: number) => {
-    console.log({fileToUpload})
+
     const imageManipulating = [...imageShow];
     imageManipulating[index].status = "uploading";
     setImageShow(imageManipulating);

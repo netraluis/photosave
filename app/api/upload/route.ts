@@ -13,13 +13,13 @@ import { ObjectId } from "mongodb";
 
 export async function POST(request: Request) {
   const fileToUpload = await request.formData();
-  console.log(fileToUpload);
+
   if(!fileToUpload.has('file')) return Response.json({error: ' file'})
-  // const {file } = fileToUpload;
 
   const file = fileToUpload.get('file');
-  console.log(file)
-  const {name, type} = file as File;
+  const {name, type, size} = file as File;
+
+  const _id = new ObjectId();
 
 
   try {
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     // console.log({ key: `${uui}.${contentType.split('/')[1]}` });
     const { url, fields } = await createPresignedPost(client, {
       Bucket: process.env.AWS_BUCKET_NAME!,
-      Key: `${uui}.${type.split('/')[1]}`,
+      Key: `${_id}.${type.split('/')[1]}`,
       Conditions: [
         ["content-length-range", 0, 10400000085760], // up to 10 MB
         ["starts-with", "$Content-Type", type],
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       // console.log({filename, contentType, file})
 
 
-      // await db.collection("photos").insertOne({ filename, contentType, file });
+      await db.collection("photos").insertOne({ _id, name, type, size});
       // const result = await db.collection("photos").find().toArray();
       // console.log({ result });
       client.close();
@@ -73,6 +73,7 @@ export async function POST(request: Request) {
 
     
   } catch (error: any) {
+    console.log({ error })
     return Response.json({ error: error.message });
   }
 }
