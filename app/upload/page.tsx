@@ -223,6 +223,7 @@ export default function Page() {
                         type="file"
                         className="sr-only text-center"
                         multiple
+                        accept="image/png, image/jpeg"
                         onChange={onImageChange}
                       />
                     </label>
